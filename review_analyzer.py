@@ -1,14 +1,8 @@
-import pymysql
 import pandas as pd
+from db_config import get_connection
 
 # DB 연결
-conn = pymysql.connect(
-    host="localhost",
-    user="root",
-    password="3213",
-    database="reviews",
-    charset="utf8mb4"
-)
+conn = get_connection()
 
 # 테이블 조회
 query = """

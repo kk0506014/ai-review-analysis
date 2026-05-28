@@ -1,17 +1,10 @@
 import requests
-import pymysql
 import re
 from datetime import datetime
+from db_config import get_connection
 
 # DB 연결
-conn = pymysql.connect(
-    host="localhost",
-    user="root",
-    password="3213",
-    database="reviews",
-    charset="utf8mb4"
-)
-
+conn = get_connection()
 cursor_db = conn.cursor()
 
 # 테이블 생성
