@@ -219,3 +219,113 @@ representative_reviews.to_csv(
 )
 
 print("\n추천 여부 기반 사용자 반응 분석 완료")
+
+stopwords = {
+    "그리고", "하지만", "그러나", "그래서",
+    "그런데", "또한",
+
+    "정말", "너무", "진짜", "그냥",
+    "약간", "매우", "조금",
+
+    "이게", "이건", "이거",
+    "저게", "저건", "저거",
+
+    "제가", "나는", "저는",
+    "너는", "우리는",
+
+    "것을", "것이", "것은", "것도",
+    "대한", "대해",
+
+    "때문", "때문에",
+    "경우", "정도", "부분", "느낌",
+
+    "게임", "게임을", "게임이",
+    "게임은", "게임도", "게임의",
+
+    "하는", "하다", "하고",
+    "하면", "해서", "했다",
+
+    "있는", "있다", "있고",
+    "없는", "없다",
+
+    "같은", "같다",
+
+    "좋은", "좋다", "좋아요",
+
+    "the", "and", "for", "this",
+    "that", "with", "you",
+    "are", "but", "not",
+    "was", "have", "has", "game"
+}
+
+
+def tokenize_review(text):
+    text = str(text).lower()
+
+    tokens = re.findall(
+        r"[가-힣]{2,}|[a-zA-Z]{2,}|\d{2,}",
+        text
+    )
+
+    tokens = [
+        token
+        for token in tokens
+        if token not in stopwords
+    ]
+
+    return tokens
+
+
+frequency_counter = Counter()
+document_counter = Counter()
+
+
+for review in df["review"]:
+    tokens = tokenize_review(review)
+
+    frequency_counter.update(tokens)
+
+    document_counter.update(set(tokens))
+
+
+keyword_result = []
+
+for keyword, frequency in frequency_counter.most_common():
+
+    document_count = document_counter[keyword]
+
+    keyword_result.append({
+        "keyword": keyword,
+        "frequency": frequency,
+        "document_count": document_count,
+        "document_ratio(%)": round(
+            document_count / len(df) * 100, 2
+        )
+    })
+
+
+keyword_df = pd.DataFrame(keyword_result)
+
+
+print("\n리뷰 텍스트 기반 키워드 빈도 분석")
+
+print(
+    keyword_df
+    .head(50)
+    .to_string(index=False)
+)
+
+
+keyword_df.to_csv(
+    "keyword_frequency.csv",
+    index=False,
+    encoding="utf-8-sig"
+)
+
+keyword_df.head(50).to_csv(
+    "keyword_top.csv",
+    index=False,
+    encoding="utf-8-sig"
+)
+
+print("\n리뷰 텍스트 기반 키워드 빈도 분석 완료")
