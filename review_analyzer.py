@@ -1,8 +1,9 @@
-import pandas as pd
-from db_config import get_connection
+import re
+from collections import Counter
 
-# DB 연결
-conn = get_connection()
+import pandas as pd
+
+from db_config import get_connection
 
 def load_reviews():
     query = """
@@ -101,3 +102,120 @@ top_likes.to_csv("top_likes.csv", index=False, encoding="utf-8-sig")
 top_playtime.to_csv("top_playtime.csv", index=False, encoding="utf-8-sig")
 
 print("\n기초 통계 분석 결과 저장 완료")
+
+df["recommend_label"] = df["recommend"].map({
+    1: "추천",
+    0: "비추천"
+})
+
+df["has_likes"] = df["likes"] >= 1
+df["has_funny"] = df["funny"] >= 1
+
+
+recommend_group_summary = []
+
+for label in ["추천", "비추천"]:
+    group = df[df["recommend_label"] == label]
+
+    if len(group) == 0:
+        continue
+
+    recommend_group_summary.append({
+        "구분": label,
+        "리뷰 수": len(group),
+
+        "좋아요 평균": round(group["likes"].mean(), 2),
+        "좋아요 중앙값": round(group["likes"].median(), 2),
+        "좋아요 최댓값": group["likes"].max(),
+        "좋아요 1개 이상 비율(%)": round(
+            group["has_likes"].mean() * 100, 2
+        ),
+
+        "재미 평가 평균": round(group["funny"].mean(), 2),
+        "재미 평가 중앙값": round(group["funny"].median(), 2),
+        "재미 평가 최댓값": group["funny"].max(),
+        "재미 평가 1개 이상 비율(%)": round(
+            group["has_funny"].mean() * 100, 2
+        ),
+
+        "플레이 시간 평균(시간)": round(
+            group["playtime_hours"].mean(), 2
+        ),
+        "플레이 시간 중앙값(시간)": round(
+            group["playtime_hours"].median(), 2
+        ),
+        "플레이 시간 최댓값(시간)": round(
+            group["playtime_hours"].max(), 2
+        ),
+
+        "리뷰 길이 평균(자)": round(
+            group["review_length"].mean(), 2
+        ),
+        "리뷰 길이 중앙값(자)": round(
+            group["review_length"].median(), 2
+        ),
+        "리뷰 길이 최댓값(자)": group["review_length"].max()
+    })
+
+
+recommend_group_summary = pd.DataFrame(
+    recommend_group_summary
+)
+
+print("\n추천 여부 기반 사용자 반응 분석")
+print(recommend_group_summary.to_string(index=False))
+
+
+representative_reviews = []
+
+for label in ["추천", "비추천"]:
+    group = df[df["recommend_label"] == label]
+
+    top_reviews = (
+        group
+        .sort_values(
+            by=["likes", "review_length"],
+            ascending=[False, False]
+        )
+        .head(5)
+    )
+
+    representative_reviews.append(
+        top_reviews[
+            [
+                "id",
+                "recommend_label",
+                "review",
+                "likes",
+                "funny",
+                "playtime_hours",
+                "review_length",
+                "created_at"
+            ]
+        ]
+    )
+
+
+representative_reviews = pd.concat(
+    representative_reviews,
+    ignore_index=True
+)
+
+
+print("\n추천/비추천 대표 리뷰")
+print(representative_reviews.to_string(index=False))
+
+
+recommend_group_summary.to_csv(
+    "recommend_group_summary.csv",
+    index=False,
+    encoding="utf-8-sig"
+)
+
+representative_reviews.to_csv(
+    "recommend_group_representative_reviews.csv",
+    index=False,
+    encoding="utf-8-sig"
+)
+
+print("\n추천 여부 기반 사용자 반응 분석 완료")
