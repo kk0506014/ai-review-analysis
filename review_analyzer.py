@@ -95,11 +95,11 @@ print("\n플레이 시간이 긴 사용자 리뷰 상위 10개")
 print(top_playtime[["id", "review", "recommend", "likes", "funny", "playtime_hours", "created_at"]])
 
 # 분석 결과 저장
-recommend_summary.to_csv("data/results/basic/recommend_summary.csv", index=False, encoding="utf-8-sig")
-numeric_summary.to_csv("data/results/basic/numeric_summary.csv", encoding="utf-8-sig")
-daily_review_count.to_csv("data/results/basic/daily_review_count.csv", index=False, encoding="utf-8-sig")
-top_likes.to_csv("data/results/basic/top_likes.csv", index=False, encoding="utf-8-sig")
-top_playtime.to_csv("data/results/basic/top_playtime.csv", index=False, encoding="utf-8-sig")
+recommend_summary.to_csv("data/results/recommend_summary.csv", index=False, encoding="utf-8-sig")
+numeric_summary.to_csv("data/results/numeric_summary.csv", encoding="utf-8-sig")
+daily_review_count.to_csv("data/results/daily_review_count.csv", index=False, encoding="utf-8-sig")
+top_likes.to_csv("data/results/top_likes.csv", index=False, encoding="utf-8-sig")
+top_playtime.to_csv("data/results/top_playtime.csv", index=False, encoding="utf-8-sig")
 
 print("\n기초 통계 분석 결과 저장 완료")
 
@@ -207,13 +207,13 @@ print(representative_reviews.to_string(index=False))
 
 
 recommend_group_summary.to_csv(
-    "data/results/recommend/recommend_group_summary.csv",
+    "data/results/recommend_group_summary.csv",
     index=False,
     encoding="utf-8-sig"
 )
 
 representative_reviews.to_csv(
-    "data/results/recommend/recommend_group_representative_reviews.csv",
+    "data/results/recommend_group_representative_reviews.csv",
     index=False,
     encoding="utf-8-sig"
 )
@@ -317,13 +317,13 @@ print(
 
 
 keyword_df.to_csv(
-    "data/results/keyword/keyword_frequency.csv",
+    "data/results/keyword_frequency.csv",
     index=False,
     encoding="utf-8-sig"
 )
 
 keyword_df.head(50).to_csv(
-    "data/results/keyword/keyword_top.csv",
+    "data/results/keyword_top.csv",
     index=False,
     encoding="utf-8-sig"
 )
