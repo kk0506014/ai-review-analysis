@@ -5,6 +5,8 @@ import pandas as pd
 
 from db_config import get_connection
 
+from pathlib import Path
+
 def load_reviews():
     query = """
     SELECT
@@ -437,3 +439,178 @@ keyword_comparison.to_csv(
 )
 
 print("\n긍정·부정 리뷰 키워드 비교 분석 완료")
+
+
+
+Path("data/results").mkdir(parents=True, exist_ok=True)
+
+playtime_labels = [
+    "50시간 미만",
+    "50~100시간",
+    "100~300시간",
+    "300시간 이상"
+]
+
+df["playtime_group"] = pd.cut(
+    df["playtime"] / 60,
+    bins=[0, 50, 100, 300, float("inf")],
+    labels=playtime_labels,
+    right=False,
+    include_lowest=True
+)
+
+playtime_summary = []
+
+for label in playtime_labels:
+    group = df[df["playtime_group"] == label]
+
+    if len(group) == 0:
+        continue
+
+    playtime_summary.append({
+        "playtime_group": label,
+        "review_count": len(group),
+        "review_ratio(%)": round(
+            len(group) / len(df) * 100, 2
+        ),
+        "recommend_count": int(group["recommend"].sum()),
+        "negative_count": int(
+            (group["recommend"] == 0).sum()
+        ),
+        "recommend_ratio(%)": round(
+            group["recommend"].mean() * 100, 2
+        ),
+        "playtime_mean": round(
+            (group["playtime"] / 60).mean(), 2
+        ),
+        "review_length_mean": round(
+            group["review_length"].mean(), 2
+        ),
+        "review_length_median": round(
+            group["review_length"].median(), 2
+        ),
+        "likes_mean": round(
+            group["likes"].mean(), 2
+        ),
+        "funny_mean": round(
+            group["funny"].mean(), 2
+        )
+    })
+
+playtime_summary_df = pd.DataFrame(playtime_summary)
+
+print("\n플레이 시간 구간별 리뷰 특성 분석")
+print(playtime_summary_df.to_string(index=False))
+
+
+playtime_keyword_results = []
+
+for label in playtime_labels:
+    group = df[df["playtime_group"] == label]
+
+    if group.empty:
+        continue
+
+    frequency_counter = Counter()
+    document_counter = Counter()
+
+    for review in group["review"].fillna(""):
+        tokens = tokenize_review(review)
+
+        frequency_counter.update(tokens)
+        document_counter.update(set(tokens))
+
+    for keyword, frequency in frequency_counter.most_common():
+        document_count = document_counter[keyword]
+
+        playtime_keyword_results.append({
+            "playtime_group": label,
+            "keyword": keyword,
+            "frequency": frequency,
+            "document_count": document_count,
+            "document_ratio(%)": round(
+                document_count / len(group) * 100, 2
+            )
+        })
+
+playtime_keywords_df = pd.DataFrame(
+    playtime_keyword_results,
+    columns=[
+        "playtime_group",
+        "keyword",
+        "frequency",
+        "document_count",
+        "document_ratio(%)"
+    ]
+)
+
+print("\n플레이 시간 구간별 주요 키워드")
+
+for label in playtime_labels:
+    group_keywords = playtime_keywords_df[
+        playtime_keywords_df["playtime_group"] == label
+    ]
+
+    print(f"\n[{label}]")
+    print(
+        group_keywords.head(15).to_string(index=False)
+    )
+
+
+representative_reviews = []
+
+for label in playtime_labels:
+    group = df[df["playtime_group"] == label]
+
+    top_reviews = (
+        group.sort_values(
+            by=["likes", "review_length"],
+            ascending=[False, False]
+        ).head(5)
+    )
+
+    representative_reviews.append(
+        top_reviews[
+            [
+                "id",
+                "playtime_group",
+                "review",
+                "recommend",
+                "likes",
+                "funny",
+                "playtime_hours",
+                "review_length"
+            ]
+        ]
+    )
+
+playtime_representative_df = pd.concat(
+    representative_reviews,
+    ignore_index=True
+)
+
+print("\n플레이 시간 구간별 대표 리뷰")
+print(
+    playtime_representative_df.to_string(index=False)
+)
+
+
+playtime_summary_df.to_csv(
+    "data/results/playtime_group_summary.csv",
+    index=False,
+    encoding="utf-8-sig"
+)
+
+playtime_keywords_df.to_csv(
+    "data/results/playtime_group_keywords.csv",
+    index=False,
+    encoding="utf-8-sig"
+)
+
+playtime_representative_df.to_csv(
+    "data/results/playtime_group_representative_reviews.csv",
+    index=False,
+    encoding="utf-8-sig"
+)
+
+print("\n플레이 시간 기반 리뷰 특성 분석 완료")
