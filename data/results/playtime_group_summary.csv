@@ -1,0 +1,5 @@
+﻿playtime_group,review_count,review_ratio(%),recommend_count,negative_count,recommend_ratio(%),playtime_mean,review_length_mean,review_length_median,likes_mean,funny_mean
+50시간 미만,56,27.59,52,4,92.86,20.72,59.8,27.5,0.7,0.11
+50~100시간,37,18.23,36,1,97.3,75.56,128.05,40.0,0.32,0.08
+100~300시간,71,34.98,70,1,98.59,176.35,69.3,36.0,0.48,0.2
+300시간 이상,39,19.21,39,0,100.0,664.56,75.79,38.0,0.82,0.38
