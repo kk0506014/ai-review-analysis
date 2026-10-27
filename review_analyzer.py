@@ -329,3 +329,111 @@ keyword_df.head(50).to_csv(
 )
 
 print("\n리뷰 텍스트 기반 키워드 빈도 분석 완료")
+
+
+def analyze_group_keywords(group, label):
+    frequency_counter = Counter()
+    document_counter = Counter()
+
+    for review in group["review"].fillna(""):
+        tokens = tokenize_review(review)
+
+        frequency_counter.update(tokens)
+        document_counter.update(set(tokens))
+
+    keyword_result = []
+    total_reviews = len(group)
+
+    for keyword, frequency in frequency_counter.most_common():
+        document_count = document_counter[keyword]
+
+        keyword_result.append({
+            "keyword": keyword,
+            "frequency": frequency,
+            "document_count": document_count,
+            "document_ratio(%)": round(
+                document_count / total_reviews * 100, 2
+            )
+        })
+
+    result_df = pd.DataFrame(
+        keyword_result,
+        columns=[
+            "keyword",
+            "frequency",
+            "document_count",
+            "document_ratio(%)"
+        ]
+    )
+
+    print(f"\n{label} 리뷰 주요 키워드")
+    print(result_df.head(20).to_string(index=False))
+
+    return result_df
+
+
+positive_reviews = df[df["recommend"] == 1]
+negative_reviews = df[df["recommend"] == 0]
+
+print("\n긍정 리뷰와 부정 리뷰의 키워드 비교 분석")
+print("추천 리뷰 수:", len(positive_reviews))
+print("비추천 리뷰 수:", len(negative_reviews))
+
+positive_keywords = analyze_group_keywords(
+    positive_reviews, "추천"
+)
+
+negative_keywords = analyze_group_keywords(
+    negative_reviews, "비추천"
+)
+
+keyword_comparison = pd.merge(
+    positive_keywords,
+    negative_keywords,
+    on="keyword",
+    how="outer",
+    suffixes=("_positive", "_negative")
+).fillna(0)
+
+keyword_comparison["ratio_difference"] = (
+    keyword_comparison["document_ratio(%)_negative"]
+    - keyword_comparison["document_ratio(%)_positive"]
+).round(2)
+
+negative_feature_keywords = (
+    keyword_comparison[
+        keyword_comparison["document_count_negative"] > 0
+    ]
+    .sort_values(
+        by=[
+            "document_ratio(%)_negative",
+            "frequency_negative"
+        ],
+        ascending=False
+    )
+)
+
+print("\n비추천 리뷰 주요 키워드 비교")
+print(
+    negative_feature_keywords.head(20).to_string(index=False)
+)
+
+positive_keywords.to_csv(
+    "data/results/positive_keywords.csv",
+    index=False,
+    encoding="utf-8-sig"
+)
+
+negative_keywords.to_csv(
+    "data/results/negative_keywords.csv",
+    index=False,
+    encoding="utf-8-sig"
+)
+
+keyword_comparison.to_csv(
+    "data/results/keyword_comparison.csv",
+    index=False,
+    encoding="utf-8-sig"
+)
+
+print("\n긍정·부정 리뷰 키워드 비교 분석 완료")
